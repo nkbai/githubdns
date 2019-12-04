@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Arg::with_name("domains")
                 .long("domains")
                 .help("set the dns needs to write to hosts")
-                .default_value("github.com,github.global.ssl.fastly.net,codeload.github.com")
+                .default_value("github.com,github.global.ssl.fastly.net,codeload.github.com,assets-cdn.github.com")
                 .required(false),
         )
         .get_matches();
