@@ -1,18 +1,3 @@
-//! A "tiny" example of HTTP request/response handling using transports.
-//!
-//! This example is intended for *learning purposes* to see how various pieces
-//! hook up together and how HTTP can get up and running. Note that this example
-//! is written with the restriction that it *can't* use any "big" library other
-//! than Tokio, if you'd like a "real world" HTTP library you likely want a
-//! crate like Hyper.
-//!
-//! Code here is based on the `echo-threads` example and implements two paths,
-//! the `/plaintext` and `/json` routes to respond with some text and json,
-//! respectively. By default this will run I/O on all the cores your system has
-//! available, and it doesn't support HTTP request bodies.
-
-#![warn(rust_2018_idioms)]
-
 use futures::future::*;
 use native_tls;
 use scraper::{Html, Selector};
@@ -45,33 +30,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let domains_str = m.value_of("domains").unwrap().to_string();
     let domains: Vec<&str> = domains_str.split(",").collect();
     let domain_ips = Arc::new(RwLock::new(HashMap::new()));
-    if true {
-        let mut v = Vec::new();
-        for domain in domains.iter() {
-            let domain_ips = domain_ips.clone();
-            let domain = String::from(*domain);
-            v.push(async move {
-                let res = get(domain.clone()).await;
-                if res.is_err() {
-                    println!(
-                        "get domain {},err {}",
-                        domain,
-                        res.unwrap_err().description()
-                    );
-                    return;
-                }
-                let res = res.unwrap();
-                let ip = get_address(&res, domain.clone());
-                domain_ips.write().unwrap().insert(domain.clone(), ip);
-            });
-        }
-        join_all(v).await;
-    } else {
-        let mut dm = domain_ips.write().unwrap();
-        for domain in domains {
-            dm.insert(String::from(domain), "127.0.0.1".into());
-        }
+
+    let mut v = Vec::new();
+    for domain in domains.iter() {
+        let domain_ips = domain_ips.clone();
+        let domain = String::from(*domain);
+        v.push(async move {
+            let res = get(domain.clone()).await;
+            if res.is_err() {
+                println!(
+                    "get domain {},err {}",
+                    domain,
+                    res.unwrap_err().description()
+                );
+                return;
+            }
+            let res = res.unwrap();
+            let ip = get_address(&res, domain.clone());
+            domain_ips.write().unwrap().insert(domain.clone(), ip);
+        });
     }
+    join_all(v).await;
+
     //    println!("domain_ips={:?}", domain_ips.read().unwrap());
     let (hosts_file, enter) = get_hosts_file();
     read_and_modify_hosts(domain_ips.clone(), &hosts_file, &enter).await;
@@ -165,7 +145,7 @@ async fn read_and_modify_hosts(
         }
     }
     lines.push(flags.into());
-    let r = fs::write(hosts_file, lines.join(enter).as_bytes()).await;
+    let r = fs::write(hosts_file_name, lines.join(enter).as_bytes()).await;
     if r.is_err() {
         panic!("write to {} ,err={}", hosts_file, r.unwrap_err());
     }
