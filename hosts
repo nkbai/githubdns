@@ -15,7 +15,3 @@
 # localhost name resolution is handled within DNS itself.
 #	127.0.0.1       localhost
 #	::1             localhost
-
-127.0.0.1       activate.navicat.com
-127.0.0.1   github.com
-127.0.0.1   test.github.com
